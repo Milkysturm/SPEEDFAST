@@ -1,89 +1,72 @@
 package com.speedfast;
 
+import com.speedfast.modelo.Pedido;
+import com.speedfast.modelo.PedidoComida;
+import com.speedfast.modelo.PedidoEncomienda;
+import com.speedfast.modelo.PedidoExpress;
+import com.speedfast.reporte.ReporteConsola;
+
 /**
- * Clase principal del sistema de reparto SpeedFast.
+ * Clase de prueba del sistema de reparto SpeedFast.
  *
- * Demuestra el uso de polimorfismo:
- *   1. Sobrescritura: cada subclase responde distinto al mismo mensaje.
- *   2. Sobrecarga: el mismo método admite dos firmas diferentes.
- *   3. Polimorfismo en tiempo de ejecución: un arreglo de tipo Pedido
- *      almacena objetos de distintas subclases y Java resuelve en ejecución
- *      qué implementación invocar.
+ * Semana 2: definicion de una clase abstracta y su jerarquia.
+ *
+ * Main se limita a crear los objetos y a recorrerlos. El calculo vive en cada
+ * subclase y el formato de la salida en {@link ReporteConsola}.
+ *
+ * @author Olga Rivas
+ * @version 2.0
  */
 public class Main {
 
     public static void main(String[] args) {
 
-        System.out.println("=================================================");
-        System.out.println("      SPEEDFAST - SISTEMA DE REPARTO A DOMICILIO ");
-        System.out.println("=================================================");
+        // Arreglo polimorfico: referencias de tipo Pedido apuntando a subclases
+        Pedido[] pedidos = crearPedidos();
 
-        // ---- Instanciación de un objeto de cada subclase ----
-        PedidoComida pedidoComida =
-                new PedidoComida("1001", "Av. Providencia 1234", true);
+        ReporteConsola.imprimirEncabezado(
+                "SISTEMA DE REPARTO SPEEDFAST - Semana 2",
+                "Clase abstracta Pedido y calculo de tiempo de entrega");
 
-        PedidoEncomienda pedidoEncomienda =
-                new PedidoEncomienda("1002", "Calle Los Aromos 567", 8.5, true);
-
-        PedidoExpress pedidoExpress =
-                new PedidoExpress("1003", "Pasaje Las Rosas 89", 1.2, true);
-
-        // =================================================================
-        // 1) MÉTODOS SOBRESCRITOS (misma firma, comportamiento distinto)
-        // =================================================================
-        System.out.println("\n--- 1. MÉTODOS SOBRESCRITOS: asignarRepartidor() ---\n");
-
-        pedidoComida.asignarRepartidor();
-        System.out.println();
-        pedidoEncomienda.asignarRepartidor();
-        System.out.println();
-        pedidoExpress.asignarRepartidor();
-
-        // =================================================================
-        // 2) MÉTODOS SOBRECARGADOS (reciben el nombre del repartidor)
-        // =================================================================
-        System.out.println("\n--- 2. MÉTODOS SOBRECARGADOS: asignarRepartidor(String) ---\n");
-
-        pedidoComida.asignarRepartidor("Juan Pérez");
-        System.out.println();
-        pedidoEncomienda.asignarRepartidor("Camila Soto");
-        System.out.println();
-        pedidoExpress.asignarRepartidor("Luis Díaz");
-
-        // =================================================================
-        // 3) POLIMORFISMO EN TIEMPO DE EJECUCIÓN
-        //    Las referencias son de tipo Pedido (clase base), pero cada
-        //    objeto ejecuta la versión de SU propia clase.
-        // =================================================================
-        System.out.println("\n--- 3. POLIMORFISMO: arreglo de tipo Pedido ---\n");
-
-        Pedido[] pedidos = { pedidoComida, pedidoEncomienda, pedidoExpress };
-        String[] repartidores = { "Juan Pérez", "Camila Soto", "Luis Díaz" };
-
-        for (int i = 0; i < pedidos.length; i++) {
-            System.out.println(pedidos[i]);            // usa toString()
-            pedidos[i].asignarRepartidor(repartidores[i]);
+        // Se invoca mostrarResumen() sobre cada pedido. Java resuelve en tiempo
+        // de ejecucion la version de calcularTiempoEntrega() que corresponde.
+        ReporteConsola.imprimirSeccion("DETALLE DE LOS PEDIDOS");
+        for (Pedido pedido : pedidos) {
+            pedido.mostrarResumen();
             System.out.println();
         }
 
-        // =================================================================
-        // 4) CASOS QUE NO CUMPLEN LAS VALIDACIONES
-        //    Evidencia de que la lógica de cada subclase realmente valida.
-        // =================================================================
-        System.out.println("--- 4. CASOS CON VALIDACIÓN FALLIDA ---\n");
+        // Comparacion directa de los tiempos estimados
+        ReporteConsola.imprimirSeccion("COMPARATIVA DE TIEMPOS ESTIMADOS");
+        ReporteConsola.imprimirTablaComparativa(pedidos);
+        ReporteConsola.imprimirExtremos(pedidos);
 
-        PedidoComida comidaSinMochila =
-                new PedidoComida("1004", "Av. Matta 4321", false);
-        comidaSinMochila.asignarRepartidor("Pedro Rojas");
+        ReporteConsola.imprimirCierre(pedidos.length);
+    }
 
-        System.out.println();
+    /**
+     * Crea un pedido de cada tipo. Se incluyen dos compras express para
+     * evidenciar el recargo que se aplica sobre los 5 km.
+     *
+     * @return arreglo con los pedidos de prueba
+     */
+    private static Pedido[] crearPedidos() {
+        PedidoComida comida = new PedidoComida(
+                "P-001", "Av. Providencia 1234, Santiago", 3.5,
+                "Sushi Kai", true);
 
-        PedidoEncomienda encomiendaPesada =
-                new PedidoEncomienda("1005", "Camino El Alba 900", 32.0, false);
-        encomiendaPesada.asignarRepartidor("Ana Muñoz");
+        PedidoEncomienda encomienda = new PedidoEncomienda(
+                "P-002", "Calle Los Aromos 456, Maipu", 8.0,
+                25.5, "Caja reforzada");
 
-        System.out.println("\n=================================================");
-        System.out.println("        PROCESO DE ASIGNACIÓN FINALIZADO         ");
-        System.out.println("=================================================");
+        PedidoExpress expressCerca = new PedidoExpress(
+                "P-003", "Pasaje El Roble 789, La Florida", 2.0,
+                "Farmacia Central", true);
+
+        PedidoExpress expressLejos = new PedidoExpress(
+                "P-004", "Av. Vicuna Mackenna 1500, Nunoa", 7.5,
+                "Supermercado Lider", false);
+
+        return new Pedido[] { comida, encomienda, expressCerca, expressLejos };
     }
 }

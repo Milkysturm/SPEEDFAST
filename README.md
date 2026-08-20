@@ -1,16 +1,16 @@
-# SpeedFast — Sistema de asignación de repartidores
+# SpeedFast — Sistema de reparto
 
 **Asignatura:** Desarrollo Orientado a Objetos II (PRY2203)
-**Experiencia 1 — Semana 1:** Explorando la sobrecarga y sobreescritura en clases derivadas
+**Experiencia 1 — Semana 2:** Definiendo una clase abstracta y su jerarquía
 
 ## Descripción
 
 Sistema de consola para **SpeedFast**, empresa de reparto a domicilio con tres tipos de servicio:
 comida (restaurantes), encomiendas (documentos o paquetes) y compras express (supermercado o farmacia).
 
-Cada tipo de pedido aplica un criterio distinto de asignación de repartidor. Esa diferencia se
-resuelve con **polimorfismo**: un mismo método `asignarRepartidor()` se comporta según el tipo real
-del objeto.
+Cada tipo de pedido estima su tiempo de entrega con una fórmula distinta. Esa diferencia se resuelve
+con una **clase abstracta** `Pedido` que declara el método `calcularTiempoEntrega()` sin implementarlo,
+obligando a cada subclase a definir su propia lógica.
 
 ## Estructura del proyecto
 
@@ -18,12 +18,14 @@ del objeto.
 SpeedFast/
 ├── src/
 │   └── com/speedfast/
-│       ├── Main.java                  Clase de prueba
-│       └── modelo/
-│           ├── Pedido.java            Clase base
-│           ├── PedidoComida.java      Subclase — mochila térmica
-│           ├── PedidoEncomienda.java  Subclase — peso y embalaje
-│           └── PedidoExpress.java     Subclase — cercanía y disponibilidad
+│       ├── Main.java                   Clase de prueba
+│       ├── modelo/
+│       │   ├── Pedido.java             Clase ABSTRACTA base
+│       │   ├── PedidoComida.java       Subclase — 15 min + 2 min/km
+│       │   ├── PedidoEncomienda.java   Subclase — 20 min + 1,5 min/km
+│       │   └── PedidoExpress.java      Subclase — 10 min, +5 min sobre 5 km
+│       └── reporte/
+│           └── ReporteConsola.java     Formato de la salida por consola
 ├── SpeedFast.iml
 ├── .gitignore
 └── README.md
@@ -32,47 +34,88 @@ SpeedFast/
 ## Jerarquía de clases
 
 ```
-                    Pedido
-     (idPedido, direccionEntrega, tipoPedido)
-                       │
-      ┌────────────────┼────────────────┐
-PedidoComida    PedidoEncomienda   PedidoExpress
+                  Pedido  (abstracta)
+     idPedido, direccionEntrega, distanciaKm
+     mostrarResumen()          <- implementado
+     calcularTiempoLineal()    <- implementado (reutilizable)
+     calcularTiempoEntrega()   <- abstracto
+     getTipoEntrega()          <- abstracto
+     getFactorDuracion()       <- abstracto
+     asignarRepartidor()       <- abstracto
+                        │
+     ┌──────────────────┼──────────────────┐
+PedidoComida    PedidoEncomienda     PedidoExpress
 ```
 
-## Conceptos aplicados
+## Por qué una clase abstracta
 
-### Encapsulamiento
+`Pedido` no se puede instanciar: no existe "un pedido" sin tipo. Reúne lo común a todos
+—identificador, dirección y distancia— e implementa **una sola vez** lo que no cambia entre tipos:
 
-Todos los atributos son `private` y se acceden mediante *getters* y *setters*. Cada clase incluye un
-constructor completo que inicializa su estado; las subclases invocan `super(...)` para delegar la
-inicialización de los atributos heredados.
+- `mostrarResumen()`, porque el formato del resumen es siempre el mismo.
+- `calcularTiempoLineal(base, minutosPorKm)`, la fórmula "tiempo base + valor por kilómetro" que
+  comparten comida y encomienda. Vive en la clase base justamente para no repetirla en cada subclase.
 
-### Sobreescritura (override)
+Lo que sí cambia queda declarado como abstracto, de modo que el compilador **obliga** a cada subclase
+a resolverlo:
 
-Las tres subclases redefinen `asignarRepartidor()` con la lógica de su criterio:
-
-| Clase | Criterio de asignación |
+| Método abstracto | Qué aporta cada subclase |
 |---|---|
-| `PedidoComida` | Requiere repartidor con mochila térmica |
-| `PedidoEncomienda` | Valida peso (límite 20 kg) y embalaje |
-| `PedidoExpress` | Repartidor más cercano con disponibilidad inmediata |
+| `calcularTiempoEntrega()` | La fórmula de tiempo propia de su servicio |
+| `getTipoEntrega()` | El nombre del tipo de entrega |
+| `getFactorDuracion()` | El factor que explica su duración |
+| `asignarRepartidor()` | El criterio con que se elige al repartidor |
 
-### Sobrecarga (overload)
+## Reglas de cálculo
 
-Cada clase define además `asignarRepartidor(String nombreRepartidor)`, misma funcionalidad con una
-firma distinta. Esta versión recibe el repartidor ya elegido e imprime la **validación** propia del
-tipo de pedido (mochila térmica, peso, disponibilidad), confirmando o rechazando la asignación.
+| Clase | Fórmula | Ejemplo |
+|---|---|---|
+| `PedidoComida` | 15 min + 2 min por km | 3,5 km → 22 min |
+| `PedidoEncomienda` | 20 min + 1,5 min por km, ajustado a entero | 8,0 km → 32 min |
+| `PedidoExpress` | 10 min base; +5 min si supera los 5 km | 2,0 km → 10 min / 7,5 km → 15 min |
 
-### Polimorfismo
+**Sobre el ajuste a entero:** se usa `Math.round()`, es decir, redondeo al minuto más cercano en vez
+de truncamiento. Una encomienda a 7 km da 30,5 minutos y se informa como 31, porque en una estimación
+de entrega conviene no prometer menos tiempo del real.
 
-En `Main` los objetos se almacenan en un arreglo de tipo `Pedido[]`. Al recorrerlo y llamar
-`pedido.asignarRepartidor()`, Java resuelve en tiempo de ejecución cuál implementación ejecutar
-según el tipo real de cada objeto.
+**Sobre el umbral de los 5 km:** la condición es estrictamente mayor. Una compra express a exactamente
+5,0 km no paga recargo; a 5,1 km sí.
+
+## Separación de responsabilidades
+
+- **`modelo`** calcula y devuelve datos. `calcularTiempoEntrega()` retorna un `int`, no imprime.
+- **`reporte`** concentra el formato de la salida en `ReporteConsola`.
+- **`Main`** crea los objetos, recorre el arreglo llamando a `mostrarResumen()` y pide el reporte.
+
+Así, cambiar el formato de la salida no obliga a tocar la lógica de negocio.
+
+## Atributos propios de cada subclase
+
+Cada subclase agrega sus propios atributos, que influyen tanto en el detalle que muestra el resumen
+como en el criterio de asignación del repartidor:
+
+| Clase | Atributos propios | Criterio de asignación |
+|---|---|---|
+| `PedidoComida` | `restaurante`, `requiereMochilaTermica` | Repartidor con mochila térmica |
+| `PedidoEncomienda` | `pesoKg`, `tipoEmbalaje` | Vehículo de carga sobre 20 kg |
+| `PedidoExpress` | `local`, `disponibilidadInmediata` | Repartidor con disponibilidad inmediata |
+
+## Validación
+
+El constructor de `Pedido` rechaza distancias negativas con `IllegalArgumentException`, para que un
+dato erróneo no produzca tiempos de entrega negativos. La misma validación se aplica en
+`setDistanciaKm()`.
+
+## Polimorfismo
+
+En `Main` los cuatro pedidos se guardan en un arreglo de tipo `Pedido[]`. Al recorrerlo, Java
+resuelve en tiempo de ejecución qué implementación de `calcularTiempoEntrega()` corresponde a cada
+objeto, sin que el código del reporte necesite conocer los tipos concretos.
 
 ## Ejecución
 
-**Desde IntelliJ IDEA:** abrir la carpeta `SpeedFast`, marcar `src` como *Sources Root* si no lo
-está, y ejecutar `Main`.
+**Desde IntelliJ IDEA:** abrir la carpeta `SpeedFast` y ejecutar `Main`. Si el IDE no reconoce las
+fuentes, marcar `src` como *Sources Root*.
 
 **Desde terminal:**
 
@@ -84,67 +127,62 @@ java -cp out com.speedfast.Main
 ## Salida esperada
 
 ```
-==========================================================
-        SISTEMA DE REPARTO SPEEDFAST - Semana 1
-     Sobrecarga y sobreescritura en clases derivadas
-==========================================================
+============================================================
+  SISTEMA DE REPARTO SPEEDFAST - Semana 2
+  Clase abstracta Pedido y calculo de tiempo de entrega
+============================================================
 
---- 1. SOBREESCRITURA: asignarRepartidor() ---
+DETALLE DE LOS PEDIDOS
 
-[P-001] PEDIDO DE COMIDA - Sushi Kai
-    Destino: Av. Providencia 1234, Santiago
-    Criterio: se busca repartidor con MOCHILA TERMICA disponible.
+Pedido P-001  [Comida]
+   Direccion de entrega : Av. Providencia 1234, Santiago
+   Distancia            : 3.5 km
+   Detalle del servicio : Restaurante Sushi Kai
+   Factor de duracion   : Preparacion en cocina (15 min) mas 2 min por km
+   Asignacion           : Repartidor con MOCHILA TERMICA
+   Tiempo estimado      : 22 min
 
-[P-002] ENCOMIENDA - embalaje: Caja reforzada
-    Destino: Calle Los Aromos 456, Maipu
-    Peso declarado: 25.5 kg.
-    Criterio: supera los 20.0 kg, se requiere repartidor con vehiculo de carga.
+Pedido P-002  [Encomienda]
+   Direccion de entrega : Calle Los Aromos 456, Maipu
+   Distancia            : 8.0 km
+   Detalle del servicio : 25.5 kg en Caja reforzada
+   Factor de duracion   : Retiro y revision de embalaje (20 min) mas 1.5 min por km
+   Asignacion           : Repartidor con VEHICULO DE CARGA (supera 20.0 kg)
+   Tiempo estimado      : 32 min
 
-[P-003] COMPRA EXPRESS - Farmacia Central
-    Destino: Pasaje El Roble 789, La Florida
-    Repartidor mas cercano a 1.2 km del local.
-    Criterio: cuenta con disponibilidad inmediata, se asigna de inmediato.
+Pedido P-003  [Compra Express]
+   Direccion de entrega : Pasaje El Roble 789, La Florida
+   Distancia            : 2.0 km
+   Detalle del servicio : Compra en Farmacia Central
+   Factor de duracion   : Compra en local (10 min), sin recargo por distancia
+   Asignacion           : Repartidor cercano, asignacion inmediata
+   Tiempo estimado      : 10 min
 
-[P-004] Buscando un repartidor disponible para el pedido de tipo Generico.
-    Destino: Camino El Alba 321, Las Condes
-    Sin criterios especiales de asignacion.
+Pedido P-004  [Compra Express]
+   Direccion de entrega : Av. Vicuna Mackenna 1500, Nunoa
+   Distancia            : 7.5 km
+   Detalle del servicio : Compra en Supermercado Lider
+   Factor de duracion   : Compra en local (10 min) mas recargo de 5 min por superar los 5 km
+   Asignacion           : Sin disponibilidad inmediata, queda en espera
+   Tiempo estimado      : 15 min
 
---- 2. SOBRECARGA: asignarRepartidor(String nombreRepartidor) ---
 
-[P-001] PEDIDO DE COMIDA - Sushi Kai
-    Repartidor asignado: Camila Soto
-    Validacion: Camila Soto debe portar mochila termica. Asignacion CONFIRMADA.
-    Entrega en: Av. Providencia 1234, Santiago
+COMPARATIVA DE TIEMPOS ESTIMADOS
 
-[P-002] ENCOMIENDA - embalaje: Caja reforzada
-    Repartidor asignado: Diego Fuentes
-    Validacion de peso: 25.5 kg.
-    Resultado: Diego Fuentes debe utilizar vehiculo de carga. Asignacion CONFIRMADA con restriccion.
-    Entrega en: Calle Los Aromos 456, Maipu
+PEDIDO   TIPO              DISTANCIA     TIEMPO
+------------------------------------------------
+P-001    Comida               3.5 km     22 min
+P-002    Encomienda           8.0 km     32 min
+P-003    Compra Express       2.0 km     10 min
+P-004    Compra Express       7.5 km     15 min
 
-[P-003] COMPRA EXPRESS - Farmacia Central
-    Repartidor asignado: Marcela Rojas (a 1.2 km).
-    Validacion: disponibilidad inmediata confirmada. Asignacion CONFIRMADA.
-    Entrega en: Pasaje El Roble 789, La Florida
+Entrega mas rapida : P-003 (Compra Express) con 10 min.
+Entrega mas lenta  : P-002 (Encomienda) con 32 min.
+Diferencia entre ambas: 22 min.
 
-[P-004] Repartidor asignado: Ignacio Perez.
-    Destino: Camino El Alba 321, Las Condes
-    Validacion: sin requisitos adicionales para el tipo Generico.
-
---- 3. CASOS CON VALIDACION NEGATIVA ---
-
-[P-005] COMPRA EXPRESS - Supermercado Lider
-    Repartidor asignado: Tomas Vega (a 0.8 km).
-    Validacion: Tomas Vega no esta disponible ahora. Asignacion RECHAZADA, se reasignara.
-    Entrega en: Av. Vicuna Mackenna 1500, Nunoa
-
-[P-006] PEDIDO DE COMIDA - Heladeria Nevada
-    Destino: Los Leones 200, Providencia
-    Criterio: se busca cualquier repartidor disponible (no requiere mochila termica).
-
-==========================================================
-        Fin de la ejecucion - 6 pedidos procesados
-==========================================================
+============================================================
+  Fin del reporte - 4 pedidos procesados
+============================================================
 ```
 
 ## Entorno
