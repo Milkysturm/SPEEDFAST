@@ -1,0 +1,136 @@
+classDiagram
+    direction TB
+
+    class Despachable {
+        <<interface>>
+        +despachar() boolean
+    }
+
+    class Cancelable {
+        <<interface>>
+        +cancelar() boolean
+    }
+
+    class Rastreable {
+        <<interface>>
+        +verHistorial() void
+    }
+
+    class Pedido {
+        <<abstract>>
+        -String idPedido
+        -String direccionEntrega
+        -double distanciaKm
+        -Repartidor repartidor
+        -EstadoPedido estado
+        -List~String~ bitacora
+        +calcularTiempoEntrega()* int
+        +getTipoEntrega()* String
+        +getFactorDuracion()* String
+        +asignarRepartidor()* String
+        +asignarRepartidor(String nombre) String
+        +asignarRepartidor(String nombre, String vehiculo) String
+        +despachar() boolean
+        +despachar(String observacion) boolean
+        +cancelar() boolean
+        +cancelar(String motivo) boolean
+        +verHistorial() void
+        +mostrarResumen() void
+        #calcularTiempoLineal(int, double) int
+        #registrarAsignacion(Repartidor, String) String
+        #getDetalleServicio() String
+    }
+
+    class PedidoComida {
+        -String restaurante
+        -boolean requiereMochilaTermica
+        +calcularTiempoEntrega() int
+        +asignarRepartidor() String
+        +getTipoEntrega() String
+        +getFactorDuracion() String
+        #getDetalleServicio() String
+    }
+
+    class PedidoEncomienda {
+        -double pesoKg
+        -String tipoEmbalaje
+        +calcularTiempoEntrega() int
+        +asignarRepartidor() String
+        +getTipoEntrega() String
+        +getFactorDuracion() String
+        #getDetalleServicio() String
+    }
+
+    class PedidoExpress {
+        -String local
+        -boolean disponibilidadInmediata
+        +calcularTiempoEntrega() int
+        +asignarRepartidor() String
+        +despachar() boolean
+        +getTipoEntrega() String
+        +getFactorDuracion() String
+        #getDetalleServicio() String
+    }
+
+    class ControladorDeEnvios {
+        -List~Pedido~ pedidos
+        -List~Pedido~ entregasRealizadas
+        -List~String~ historial
+        +registrar(Pedido) void
+        +buscarPedido(String) Pedido
+        +asignarRepartidoresAutomaticamente() void
+        +despachar() boolean
+        +despachar(String observacion) boolean
+        +cancelar() boolean
+        +cancelar(String id, String motivo) boolean
+        +verHistorial() void
+        +verHistorial(String id) void
+    }
+
+    class Repartidor {
+        -String nombre
+        -String vehiculo
+        +toString() String
+    }
+
+    class EstadoPedido {
+        <<enumeration>>
+        CREADO
+        ASIGNADO
+        DESPACHADO
+        CANCELADO
+    }
+
+    class ReporteConsola {
+        <<utility>>
+        +imprimirEncabezado(String, String) void$
+        +imprimirSeccion(String) void$
+        +imprimirTablaComparativa(Pedido[]) void$
+        +imprimirTablaComparativa(List~Pedido~) void$
+        +imprimirExtremos(Pedido[]) void$
+        +imprimirExtremos(List~Pedido~) void$
+        +imprimirCierre(int) void$
+    }
+
+    class Main {
+        +main(String[]) void$
+    }
+
+    Despachable <|.. Pedido : implements
+    Cancelable  <|.. Pedido : implements
+    Rastreable  <|.. Pedido : implements
+
+    Despachable <|.. ControladorDeEnvios : implements
+    Cancelable  <|.. ControladorDeEnvios : implements
+    Rastreable  <|.. ControladorDeEnvios : implements
+
+    Pedido <|-- PedidoComida : extends
+    Pedido <|-- PedidoEncomienda : extends
+    Pedido <|-- PedidoExpress : extends
+
+    Pedido "1" o-- "0..1" Repartidor : a cargo
+    Pedido ..> EstadoPedido : usa
+    ControladorDeEnvios "1" o-- "0..*" Pedido : gestiona
+    ReporteConsola ..> Pedido : formatea
+    Main ..> ControladorDeEnvios : usa
+    Main ..> ReporteConsola : usa
