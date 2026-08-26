@@ -3,3 +3,9 @@ out/
 .idea/workspace.xml
 .idea/usage.statistics.xml
 .idea/shelf/
+.DS_Store
+_para_borrar/
+*.zip
+
+# Proyecto IntelliJ de la raiz (local, no forma parte de la entrega)
+/.idea/
