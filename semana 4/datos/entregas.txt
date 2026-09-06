@@ -1,0 +1,44 @@
+============================================================
+  SPEEDFAST - INFORME DE ENTREGAS (Semana 4)
+  Generado el 06-09-2026 15:19:24
+============================================================
+
+RESUMEN DE LA JORNADA
+  Repartidores en ruta             3
+  Pedidos cargados                 8
+  Entregas completadas             7
+  Pedidos sin entregar             1
+  Tiempo acumulado en ruta         6560 ms
+
+DETALLE POR REPARTIDOR
+
+  Camila Soto - moto con mochila termica
+  3 de 3 entrega(s), 2257 ms en ruta.
+     P-101    Comida              3.5 km  estimado  22 min  real   948 ms  Entregado
+     P-104    Comida              6.2 km  estimado  27 min  real   903 ms  Entregado
+     P-107    Compra Express      1.8 km  estimado  10 min  real   406 ms  Entregado
+
+  Diego Fuentes - furgon de carga
+  2 de 2 entrega(s), 2849 ms en ruta.
+     P-102    Encomienda          8.0 km  estimado  32 min  real  1432 ms  Entregado
+     P-105    Encomienda         15.4 km  estimado  43 min  real  1417 ms  Entregado
+
+  Luis Vera - bicicleta electrica
+  2 de 3 entrega(s), 1454 ms en ruta.
+     P-103    Compra Express      2.0 km  estimado  10 min  real   838 ms  Entregado
+     P-106    Compra Express      7.5 km  estimado  15 min  real     0 ms  Cancelado
+     P-108    Comida              9.1 km  estimado  33 min  real   616 ms  Entregado
+
+PEDIDOS QUE NO SE ENTREGARON
+  - P-106 | Compra Express | Cancelado
+
+INCIDENCIAS AL LEER EL ARCHIVO DE PEDIDOS
+  - Linea 25: la distancia no es un numero valido: 'abc'
+  - Linea 26: La distancia no puede ser negativa: -5.0
+  - Linea 27: tipo de pedido desconocido: 'DRONE'
+  - Linea 28: se esperaban 8 campos y llegaron 6
+  - Linea 29: la mochila termica debe ser true o false, y llego: 'quizas'
+
+============================================================
+  Fin del informe
+============================================================
