@@ -1,0 +1,29 @@
+# SpeedFast - Semana 4 - Pedidos de la jornada
+#
+# Formato: TIPO;ID;DIRECCION;DISTANCIA_KM;REPARTIDOR;VEHICULO;DATO_1;DATO_2
+#
+#   COMIDA      -> DATO_1 = restaurante        DATO_2 = requiere mochila termica (true/false)
+#   ENCOMIENDA  -> DATO_1 = peso en kg         DATO_2 = tipo de embalaje
+#   EXPRESS     -> DATO_1 = local              DATO_2 = disponibilidad inmediata (true/false)
+#
+# Las lineas en blanco y las que empiezan con # se ignoran.
+
+COMIDA;P-101;Av. Providencia 1234, Santiago;3.5;Camila Soto;moto con mochila termica;Sushi Kai;true
+ENCOMIENDA;P-102;Calle Los Aromos 456, Maipu;8.0;Diego Fuentes;furgon de carga;25.5;Caja reforzada
+EXPRESS;P-103;Pasaje El Roble 789, La Florida;2.0;Luis Vera;bicicleta electrica;Farmacia Central;true
+COMIDA;P-104;Av. Irarrazaval 3400, Nunoa;6.2;Camila Soto;moto con mochila termica;Pizzeria Napoli;true
+ENCOMIENDA;P-105;Camino El Alba 321, Las Condes;15.4;Diego Fuentes;furgon de carga;4.2;Sobre acolchado
+EXPRESS;P-106;Av. Vicuna Mackenna 1500, Nunoa;7.5;Luis Vera;bicicleta electrica;Supermercado Lider;true
+EXPRESS;P-107;Los Leones 200, Providencia;1.8;Camila Soto;moto con mochila termica;Farmacia Salcobrand;true
+COMIDA;P-108;Gran Avenida 5600, San Miguel;9.1;Luis Vera;bicicleta electrica;Heladeria Nevada;false
+
+# --------------------------------------------------------------------------
+# Lineas defectuosas a proposito: sirven para comprobar que el sistema informa
+# el problema, descarta solo esa linea y sigue funcionando.
+# --------------------------------------------------------------------------
+
+COMIDA;P-109;Av. Matta 800, Santiago;abc;Camila Soto;moto con mochila termica;Cafe Altura;true
+ENCOMIENDA;P-110;Alameda 1000, Santiago;-5.0;Diego Fuentes;furgon de carga;3.0;Sobre
+DRONE;P-111;Pudahuel 55, Santiago;4.0;Luis Vera;dron;Paquete liviano;true
+EXPRESS;P-112;Direccion incompleta;2.0;Luis Vera;bicicleta electrica
+COMIDA;P-113;Av. Grecia 900, Nunoa;5.0;Camila Soto;moto con mochila termica;Pizza Roma;quizas
