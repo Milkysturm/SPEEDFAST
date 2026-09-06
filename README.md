@@ -12,6 +12,7 @@ comida, encomiendas y compras express.
 |---------|-----------|
 | [`semana 2`](./semana%202) | Definición de la clase abstracta `Pedido` y su jerarquía de subclases |
 | [`semana 3`](./semana%203) | Versión integral: polimorfismo (sobrecarga y sobrescritura), abstracción e interfaces |
+| [`semana 4`](./semana%204) | Concurrencia: hilos con `Runnable` y `ExecutorService`, entrada y salida por archivo |
 
 Cada carpeta es un proyecto de IntelliJ IDEA independiente y tiene su propio README con la
 explicación del diseño.
