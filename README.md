@@ -14,6 +14,7 @@ comida, encomiendas y compras express.
 | [`semana 3`](./semana%203) | Versión integral: polimorfismo (sobrecarga y sobrescritura), abstracción e interfaces |
 | [`semana 4`](./semana%204) | Concurrencia: hilos con `Runnable` y `ExecutorService`, entrada y salida por archivo |
 | [`semana 5`](./semana%205) | Sincronización del acceso a un recurso compartido y pruebas unitarias con JUnit |
+| [`semana 6`](./semana%206) | Interfaz gráfica de escritorio con Java Swing sobre el modelo de las semanas anteriores |
 
 Cada carpeta es un proyecto de IntelliJ IDEA independiente y tiene su propio README con la
 explicación del diseño.
