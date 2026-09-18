@@ -25,13 +25,15 @@ import java.util.List;
  *
  * No se puede instanciar directamente: no existe "un pedido" sin tipo.
  *
- * El estado lo modifica el hilo del repartidor que lleva el pedido, y lo lee
- * el hilo grafico para mostrarlo en la tabla. Por eso el estado y la duracion
- * real son volatile: asi el cambio hecho por un hilo es visible de inmediato
- * para el otro.
+ * Dos hilos distintos tocan un mismo pedido: el del repartidor, que lo
+ * despacha y lo entrega, y el grafico, que lo muestra en la tabla y puede
+ * cancelarlo desde el boton del listado. Por eso los metodos que consultan o
+ * cambian el estado son synchronized: si no lo fueran, el repartidor podria
+ * comprobar que el pedido no esta cancelado, cancelarse justo en ese
+ * instante, y despacharlo igual dejando un pedido "en ruta" sin repartidor.
  *
  * @author Olga Rivas
- * @version 4.0
+ * @version 6.0
  */
 public abstract class Pedido implements Despachable, Cancelable, Rastreable {
 
@@ -48,7 +50,7 @@ public abstract class Pedido implements Despachable, Cancelable, Rastreable {
     private Repartidor repartidor;
 
     /** Situacion actual del pedido dentro del flujo de entrega. */
-    private volatile EstadoPedido estado;
+    private EstadoPedido estado;
 
     /** Registro de todo lo que le fue ocurriendo al pedido. */
     private final List<String> bitacora;
@@ -57,7 +59,7 @@ public abstract class Pedido implements Despachable, Cancelable, Rastreable {
      * Duracion real de la entrega simulada, en milisegundos.
      * Vale cero mientras el pedido no haya sido entregado.
      */
-    private volatile long duracionRealMs;
+    private long duracionRealMs;
 
     /**
      * Constructor comun a toda la jerarquia.
@@ -196,7 +198,7 @@ public abstract class Pedido implements Despachable, Cancelable, Rastreable {
      * @param criterio   razon por la que fue elegido
      * @return mensaje que describe la asignacion realizada
      */
-    protected String registrarAsignacion(Repartidor repartidor, String criterio) {
+    protected synchronized String registrarAsignacion(Repartidor repartidor, String criterio) {
         if (estado == EstadoPedido.CANCELADO) {
             String aviso = "No se puede asignar repartidor: el pedido "
                     + idPedido + " esta cancelado.";
@@ -221,7 +223,7 @@ public abstract class Pedido implements Despachable, Cancelable, Rastreable {
      * @return true si el pedido quedo despachado
      */
     @Override
-    public boolean despachar() {
+    public synchronized boolean despachar() {
         if (estado == EstadoPedido.CANCELADO) {
             registrarEvento("Despacho rechazado: el pedido esta cancelado.");
             return false;
@@ -267,7 +269,7 @@ public abstract class Pedido implements Despachable, Cancelable, Rastreable {
      * @param duracionMs tiempo real que tomo la entrega simulada
      * @return true si el pedido quedo marcado como entregado
      */
-    public boolean registrarEntrega(long duracionMs) {
+    public synchronized boolean registrarEntrega(long duracionMs) {
         if (estado != EstadoPedido.DESPACHADO) {
             registrarEvento("Entrega rechazada: el pedido no va en ruta ("
                     + estado.getDescripcion() + ").");
@@ -290,7 +292,7 @@ public abstract class Pedido implements Despachable, Cancelable, Rastreable {
      * @return true si el pedido quedo cancelado
      */
     @Override
-    public boolean cancelar() {
+    public synchronized boolean cancelar() {
         if (estado == EstadoPedido.DESPACHADO) {
             registrarEvento("Cancelacion rechazada: el pedido ya va en ruta.");
             return false;
@@ -327,7 +329,7 @@ public abstract class Pedido implements Despachable, Cancelable, Rastreable {
 
     /** Muestra por consola la bitacora completa de este pedido. */
     @Override
-    public void verHistorial() {
+    public synchronized void verHistorial() {
         System.out.println("Historial del pedido " + idPedido
                 + " [" + getTipoEntrega() + "]");
         if (bitacora.isEmpty()) {
@@ -348,7 +350,7 @@ public abstract class Pedido implements Despachable, Cancelable, Rastreable {
      *
      * @param evento descripcion de lo ocurrido
      */
-    protected final void registrarEvento(String evento) {
+    protected final synchronized void registrarEvento(String evento) {
         bitacora.add(evento);
     }
 
@@ -435,11 +437,11 @@ public abstract class Pedido implements Despachable, Cancelable, Rastreable {
         this.distanciaKm = validarDistancia(distanciaKm);
     }
 
-    public Repartidor getRepartidor() {
+    public synchronized Repartidor getRepartidor() {
         return repartidor;
     }
 
-    public EstadoPedido getEstado() {
+    public synchronized EstadoPedido getEstado() {
         return estado;
     }
 
@@ -447,7 +449,7 @@ public abstract class Pedido implements Despachable, Cancelable, Rastreable {
      * @return duracion real de la entrega en milisegundos, o cero si aun no
      *         ha sido entregado
      */
-    public long getDuracionRealMs() {
+    public synchronized long getDuracionRealMs() {
         return duracionRealMs;
     }
 
@@ -456,7 +458,7 @@ public abstract class Pedido implements Despachable, Cancelable, Rastreable {
      *
      * @return nombre del repartidor o "sin asignar"
      */
-    public String getNombreRepartidor() {
+    public synchronized String getNombreRepartidor() {
         return (repartidor == null) ? "sin asignar" : repartidor.toString();
     }
 
@@ -465,7 +467,7 @@ public abstract class Pedido implements Despachable, Cancelable, Rastreable {
      *
      * @return lista con los eventos registrados
      */
-    public List<String> getBitacora() {
+    public synchronized List<String> getBitacora() {
         return new ArrayList<>(bitacora);
     }
 

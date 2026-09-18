@@ -26,8 +26,7 @@ semana 6/
 │   │   ├── VentanaListaPedidos.java     Tabla de pedidos
 │   │   ├── VentanaEntregas.java     Asignación y simulación
 │   │   ├── ModeloTablaPedidos.java  DefaultTableModel de las tablas
-│   │   ├── RenderEstadoPedido.java  Pinta cada fila según el estado
-│   │   └── Estilos.java             Colores, tipografías y componentes comunes
+│   │   └── RenderEstadoPedido.java  Pinta cada fila según el estado
 │   ├── control/
 │   │   └── ControladorDePedidos.java    Listas en memoria y operaciones
 │   ├── modelo/                      Reutilizado de las semanas 2 a 5
@@ -43,6 +42,11 @@ semana 6/
 │       ├── Cancelable.java
 │       ├── Rastreable.java
 │       └── EscuchaDeEntregas.java   Contrato entre el modelo y la ventana
+├── test/com/speedfast/
+│   ├── control/
+│   │   └── ControladorDePedidosTest.java   Pruebas del controlador
+│   └── vista/
+│       └── ModeloTablaPedidosTest.java     Pruebas del modelo de la tabla
 ├── semana 6.iml
 └── README.md
 ```
@@ -54,7 +58,7 @@ separan lo que no es ni modelo ni pantalla: los datos compartidos y las interfac
 
 | Ventana | Qué hace |
 |---------|----------|
-| `VentanaPrincipal` | `BorderLayout`: encabezado arriba, los tres botones al centro en un `GridLayout`, y abajo un resumen que se actualiza solo (registrados, por asignar, en ruta, entregados) |
+| `VentanaPrincipal` | `BorderLayout`: el título arriba, los tres botones al centro en un `GridLayout`, y abajo un resumen que se actualiza solo (registrados, por asignar, en ruta, entregados) |
 | `VentanaRegistroPedido` | Formulario con ID, calle, comuna (`JComboBox`), tipo (`JComboBox`) y distancia. Según el tipo, un `CardLayout` muestra los campos propios: restaurante, peso y embalaje, o local |
 | `VentanaListaPedidos` | `JTable` alimentada por `ModeloTablaPedidos` (extiende `DefaultTableModel`), con filtro por estado, orden por columna, cancelación de pedidos, botón de refrescar y contador |
 | `VentanaEntregas` | Tabla de pedidos, combo de repartidores, botón para asignar y botón para iniciar la simulación, más un registro de avance con la hora de cada evento |
@@ -72,9 +76,9 @@ muestra.
 El campo ID llega **prellenado con el siguiente identificador libre** (`P-004`, `P-005`…), que
 `ControladorDePedidos.sugerirIdPedido()` calcula a partir del mayor número ya usado. Sigue siendo
 editable, así que la validación continúa aplicándose: antes de guardar se comprueba que el ID no
-esté vacío, no lleve espacios y no esté repetido; que
-que haya calle y comuna; que la distancia sea un número **finito**, no negativo y dentro de un máximo
-razonable —`Double.parseDouble` acepta cosas como `Infinity` o `0x1p3`, así que se descartan con
+esté vacío, no lleve espacios y no esté repetido; que haya calle y comuna; que la distancia sea un
+número **finito**, no negativo y dentro de un máximo razonable —`Double.parseDouble` acepta también
+`Infinity` y `NaN`, que dejarían la tabla con tiempos absurdos, así que se descartan con
 `Double.isFinite()`—, y los campos propios del tipo: restaurante obligatorio, peso
 mayor que cero y embalaje obligatorio, o local obligatorio. Cada error se muestra con un
 `JOptionPane` y deja el foco en el campo que hay que corregir. Solo si todo está correcto se crea
@@ -91,6 +95,11 @@ del modelo.
 `setAutoCreateRowSorter(true)` permite ordenar haciendo clic en cualquier encabezado, y el combo
 "Mostrar" filtra por estado. Por eso, en las ventanas donde se selecciona una fila, el pedido se
 identifica por su ID y no por el número de fila.
+
+Para que ese orden sea correcto, la distancia y el tiempo se guardan en la tabla como **números** y
+no como texto, y `ModeloTablaPedidos` lo declara sobrescribiendo `getColumnClass()`. La unidad va en
+el título de la columna (`Distancia (km)`, `Tiempo (min)`). Si se guardaran como texto, el orden
+sería alfabético: `12.5` quedaría antes que `3.5`, y `10 min` antes que `9 min`.
 
 ### Los datos que el sistema propone
 
@@ -134,6 +143,12 @@ Cómo se resuelve aquí:
 
 - `Repartidor` no sabe nada de Swing. Informa lo que va haciendo a través de la interfaz
   `EscuchaDeEntregas`, y quien la implementa decide cómo mostrarlo.
+- Los métodos de `Pedido` que consultan o cambian el estado son **`synchronized`**, como el recurso
+  compartido de la semana 5. Hacen falta porque dos hilos tocan el mismo pedido: el del repartidor
+  lo despacha y lo entrega, y el gráfico puede cancelarlo desde el listado mientras tanto. Sin el
+  candado, el repartidor puede comprobar que el pedido no está cancelado, cancelarse justo en ese
+  instante, y despacharlo igual: quedaría un pedido "en ruta" sin repartidor, imposible de cancelar
+  y que nunca llega a entregado.
 - `VentanaEntregas` implementa esa interfaz. Como los avisos llegan desde los hilos de reparto,
   cada actualización se envía con `SwingUtilities.invokeLater(...)`, que la encola para el hilo
   gráfico.
@@ -157,6 +172,23 @@ java -cp out com.speedfast.main.Main
 
 La aplicación parte con tres pedidos de ejemplo cargados, para que la tabla no aparezca vacía.
 
+## Pruebas unitarias
+
+Como en la semana 5, lo que se puede comprobar solo se comprueba con pruebas, en vez de darlo por
+hecho. Son **32 pruebas en dos archivos**, escritas con JUnit 5:
+
+| Archivo | Qué comprueba |
+|---------|---------------|
+| `ControladorDePedidosTest` | Que no se acepten IDs repetidos ni pedidos nulos; que `sugerirIdPedido()` proponga el siguiente número libre incluso con IDs escritos a mano; que la búsqueda no distinga mayúsculas; que la lista entregada sea una copia; que asignar deje el pedido `ASIGNADO` y solo una vez; que cancelar funcione en `RESERVADO` y `ASIGNADO`, saque el pedido de la ruta del repartidor y **falle** si el pedido ya va en ruta; que los observadores reciban aviso de cada cambio |
+| `ModeloTablaPedidosTest` | Que el modelo tenga las siete columnas; que `cargar()` deje una fila por pedido y en el mismo orden; que volver a cargar **reemplace** las filas en vez de acumularlas; que ninguna celda sea editable; que el modelo recuerde el ID y el estado de cada fila; que consultar una fila inexistente devuelva `null` en lugar de fallar; y que ordenar por distancia compare números y no texto |
+
+Ninguna prueba abre una ventana. El controlador guarda los datos y `ModeloTablaPedidos` los ordena
+en filas: ninguno de los dos necesita que haya pantalla, y por eso se pueden probar solos. Las
+ventanas son las que no se prueban automáticamente, porque lo suyo es lo visual.
+
+Para ejecutarlas desde IntelliJ: clic derecho sobre la carpeta `test` → *Run All Tests* (IntelliJ
+ofrece descargar JUnit 5 la primera vez).
+
 ## Capturas
 
 **Ventana principal**
@@ -167,7 +199,7 @@ La aplicación parte con tres pedidos de ejemplo cargados, para que la tabla no 
 
 ![Registro de pedido](docs/capturas/2-registro-pedido.png)
 
-**Listado de pedidos** — con dos pedidos cancelados en rojo y uno en ruta en azul
+**Listado de pedidos** — con un pedido ya entregado en verde y dos en ruta en azul
 
 ![Listado de pedidos](docs/capturas/3-listado-pedidos.png)
 
@@ -184,8 +216,11 @@ La aplicación parte con tres pedidos de ejemplo cargados, para que la tabla no 
   misma lista y lo que permite que todo se actualice junto.
 - **El modelo no depende de Swing.** Si mañana la aplicación fuera web, `Pedido` y `Repartidor`
   seguirían sirviendo sin tocar una línea.
-- **`Estilos` concentra colores y tipografías.** Mantiene las cuatro ventanas parecidas entre sí y
-  evita repetir los mismos ajustes en cada una.
+- **La interfaz usa el aspecto por defecto de Java.** No hay una clase de estilos ni colores
+  propios: los componentes se ven como los dibuja el sistema. La claridad se consigue con la
+  distribución (`BorderLayout`, `GridLayout`), los márgenes y los títulos de cada zona, no con
+  decoración. El único color que se usa a propósito es el de la tabla, porque ahí sí comunica algo:
+  el estado del pedido.
 - **Las tablas no son editables.** `ModeloTablaPedidos` sobrescribe `isCellEditable()` para
   devolver siempre `false`: los datos se cambian con el formulario, no escribiendo sobre la celda.
 - **El ID y la distancia los propone el sistema.** Eran los dos datos que había que inventar, y por

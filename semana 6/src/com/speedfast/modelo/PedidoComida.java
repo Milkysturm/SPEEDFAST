@@ -6,7 +6,7 @@ package com.speedfast.modelo;
  * Regla de tiempo: 15 minutos de preparacion en cocina mas 2 minutos por cada
  * kilometro recorrido.
  *
- * @author Olga
+ * @author Olga Rivas
  * @version 2.0
  */
 public class PedidoComida extends Pedido {

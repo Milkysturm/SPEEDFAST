@@ -5,7 +5,7 @@ package com.speedfast.contrato;
  * puesto en ruta hacia su destino.
  *
  * Se declara como interfaz y no como metodo de la clase Pedido porque
- * "despachar" no es exclusivo de un pedido: el ControladorDeEnvios tambien
+ * "despachar" no es exclusivo de un pedido: el controlador de pedidos tambien
  * despacha, pero lo hace sobre un lote completo. Al separar el contrato,
  * ambas clases comparten el vocabulario sin compartir la implementacion.
  *

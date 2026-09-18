@@ -3,6 +3,7 @@ package com.speedfast.vista;
 import com.speedfast.modelo.EstadoPedido;
 
 import javax.swing.JTable;
+import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.Color;
 import java.awt.Component;
@@ -63,12 +64,17 @@ public class RenderEstadoPedido extends DefaultTableCellRenderer {
         Component celda = super.getTableCellRendererComponent(tabla, valor, seleccionada,
                 conFoco, fila, columna);
 
+        // Los numeros se alinean a la derecha, como es habitual en una tabla.
+        setHorizontalAlignment(valor instanceof Number ? SwingConstants.RIGHT : SwingConstants.LEFT);
+
         if (seleccionada) {
             return celda;
         }
 
-        celda.setBackground(Color.WHITE);
-        celda.setForeground(Color.BLACK);
+        // Sin estado especial la celda usa los colores propios de la tabla,
+        // para que se vea como la dibuja el sistema.
+        celda.setBackground(tabla.getBackground());
+        celda.setForeground(tabla.getForeground());
 
         if (!(tabla.getModel() instanceof ModeloTablaPedidos)) {
             return celda;

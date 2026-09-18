@@ -17,11 +17,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
@@ -64,10 +65,10 @@ public final class VentanaEntregas extends JFrame implements EscuchaDeEntregas {
     private final JTextArea avance = new JTextArea();
 
     /** Boton que lanza la simulacion. */
-    private final JButton botonIniciar = Estilos.boton("Iniciar entregas", true);
+    private final JButton botonIniciar = new JButton("Iniciar entregas");
 
     /** Boton que asigna el repartidor elegido al pedido seleccionado. */
-    private final JButton botonAsignar = Estilos.boton("Asignar al pedido seleccionado", false);
+    private final JButton botonAsignar = new JButton("Asignar al pedido seleccionado");
 
     /** Etiqueta con el estado de la simulacion. */
     private final JLabel estado = new JLabel("Sin entregas en curso");
@@ -85,7 +86,7 @@ public final class VentanaEntregas extends JFrame implements EscuchaDeEntregas {
 
         setTitle("SpeedFast - Asignar repartidor e iniciar entregas");
         setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
-        setSize(1000, 620);
+        setSize(900, 560);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
@@ -93,8 +94,6 @@ public final class VentanaEntregas extends JFrame implements EscuchaDeEntregas {
             comboRepartidores.addItem(repartidor);
         }
 
-        add(Estilos.encabezado("Asignar repartidor e iniciar entregas",
-                "Elige un pedido, asignale un repartidor y lanza la simulacion"), BorderLayout.NORTH);
         add(crearCentro(), BorderLayout.CENTER);
         add(crearBarraInferior(), BorderLayout.SOUTH);
 
@@ -110,27 +109,45 @@ public final class VentanaEntregas extends JFrame implements EscuchaDeEntregas {
      */
     private JSplitPane crearCentro() {
         JPanel arriba = new JPanel(new BorderLayout());
-        arriba.setBackground(Estilos.FONDO);
         arriba.add(crearBarraAsignacion(), BorderLayout.NORTH);
 
-        Estilos.configurarTabla(tabla);
-        tabla.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tabla.getTableHeader().setReorderingAllowed(false);
+
+        // Deja el fondo de la tabla debajo de la ultima fila.
+        tabla.setFillsViewportHeight(true);
+
+        // Permite ordenar haciendo clic en el encabezado.
+        tabla.setAutoCreateRowSorter(true);
+
+        // Pinta cada fila segun el estado del pedido. Hay que registrarlo
+        // para Double e Integer ademas de Object, porque Swing trae su propio
+        // render para los numeros y, si no, esas dos columnas no se colorean.
+        RenderEstadoPedido render = new RenderEstadoPedido();
+        tabla.setDefaultRenderer(Object.class, render);
+        tabla.setDefaultRenderer(Double.class, render);
+        tabla.setDefaultRenderer(Integer.class, render);
+
+        // Reparte el ancho segun lo que muestra cada columna, para que la
+        // direccion y el repartidor no queden cortados.
+        int[] anchos = {60, 105, 215, 105, 160, 175, 95};
+        for (int i = 0; i < anchos.length && i < tabla.getColumnCount(); i++) {
+            tabla.getColumnModel().getColumn(i).setPreferredWidth(anchos[i]);
+        }
 
         JScrollPane contenedorTabla = new JScrollPane(tabla);
-        contenedorTabla.setBorder(BorderFactory.createEmptyBorder(0, 12, 12, 12));
+        contenedorTabla.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
         arriba.add(contenedorTabla, BorderLayout.CENTER);
 
+        // El area de avance usa ancho fijo para que las lineas queden alineadas.
         avance.setEditable(false);
-        avance.setFont(Estilos.MONO);
-        avance.setBackground(new Color(0x1B2430));
-        avance.setForeground(new Color(0xD7E3F0));
-        avance.setBorder(Estilos.margen(8));
+        avance.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 
         JScrollPane contenedorAvance = new JScrollPane(avance);
-        contenedorAvance.setBorder(BorderFactory.createEmptyBorder(0, 12, 12, 12));
+        contenedorAvance.setBorder(BorderFactory.createEmptyBorder(6, 10, 0, 10));
 
         JSplitPane division = new JSplitPane(JSplitPane.VERTICAL_SPLIT, arriba, contenedorAvance);
-        division.setDividerLocation(300);
+        division.setDividerLocation(280);
         division.setBorder(null);
         return division;
     }
@@ -141,14 +158,10 @@ public final class VentanaEntregas extends JFrame implements EscuchaDeEntregas {
      * @return panel de asignacion
      */
     private JPanel crearBarraAsignacion() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 12));
-        panel.setBackground(Estilos.FONDO);
-
-        comboRepartidores.setFont(Estilos.NORMAL);
-        botonAsignar.setPreferredSize(null);
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 10));
         botonAsignar.addActionListener(e -> asignar());
 
-        panel.add(Estilos.etiqueta("Repartidor:"));
+        panel.add(new JLabel("Repartidor:"));
         panel.add(comboRepartidores);
         panel.add(botonAsignar);
         return panel;
@@ -161,18 +174,11 @@ public final class VentanaEntregas extends JFrame implements EscuchaDeEntregas {
      */
     private JPanel crearBarraInferior() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(0xD8DDE4)));
+        panel.setBorder(BorderFactory.createEmptyBorder(6, 12, 8, 12));
 
-        estado.setFont(Estilos.NORMAL);
-        estado.setForeground(Estilos.GRIS);
-        estado.setBorder(Estilos.margen(12));
-
-        botonIniciar.setPreferredSize(null);
         botonIniciar.addActionListener(e -> iniciar());
 
-        JPanel derecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 8));
-        derecha.setBackground(Color.WHITE);
+        JPanel derecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         derecha.add(botonIniciar);
 
         panel.add(estado, BorderLayout.WEST);

@@ -23,16 +23,22 @@ public class ModeloTablaPedidos extends DefaultTableModel {
     /** Version de la clase, requerida por ser serializable. */
     private static final long serialVersionUID = 1L;
 
-    /** Titulos de las columnas. */
+    /** Posicion de la columna que guarda la distancia. */
+    public static final int COLUMNA_DISTANCIA = 3;
+
+    /** Posicion de la columna que guarda el tiempo estimado. */
+    public static final int COLUMNA_TIEMPO = 6;
+
+    /** Titulos de las columnas. La unidad va en el titulo, no en la celda. */
     private static final String[] COLUMNAS = {
-            "ID", "Tipo", "Direccion", "Distancia", "Estado", "Repartidor", "Tiempo"
+            "ID", "Tipo", "Direccion", "Distancia (km)", "Estado", "Repartidor", "Tiempo (min)"
     };
 
     /** Estado del pedido de cada fila, en el mismo orden que la tabla. */
-    private final transient List<EstadoPedido> estados = new ArrayList<>();
+    private final ArrayList<EstadoPedido> estados = new ArrayList<>();
 
     /** Identificador del pedido de cada fila, en el mismo orden que la tabla. */
-    private final transient List<String> identificadores = new ArrayList<>();
+    private final ArrayList<String> identificadores = new ArrayList<>();
 
     /**
      * Crea el modelo con las columnas definidas y sin filas.
@@ -54,6 +60,27 @@ public class ModeloTablaPedidos extends DefaultTableModel {
     }
 
     /**
+     * Indica el tipo de dato de cada columna.
+     *
+     * La distancia y el tiempo se guardan como numeros, no como texto, para
+     * que al ordenar por esas columnas se comparen sus valores y no sus
+     * letras: como texto, "12.5" quedaria antes que "3.5".
+     *
+     * @param columna columna consultada
+     * @return la clase de los valores de esa columna
+     */
+    @Override
+    public Class<?> getColumnClass(int columna) {
+        if (columna == COLUMNA_DISTANCIA) {
+            return Double.class;
+        }
+        if (columna == COLUMNA_TIEMPO) {
+            return Integer.class;
+        }
+        return String.class;
+    }
+
+    /**
      * Vacia la tabla y la vuelve a llenar con los pedidos indicados.
      *
      * @param pedidos pedidos a mostrar
@@ -68,10 +95,10 @@ public class ModeloTablaPedidos extends DefaultTableModel {
                     pedido.getIdPedido(),
                     pedido.getTipoEntrega(),
                     pedido.getDireccionEntrega(),
-                    String.format("%.1f km", pedido.getDistanciaKm()),
+                    pedido.getDistanciaKm(),
                     pedido.getEstado().getDescripcion(),
                     pedido.getNombreRepartidor(),
-                    pedido.calcularTiempoEntrega() + " min"
+                    pedido.calcularTiempoEntrega()
             });
             estados.add(pedido.getEstado());
             identificadores.add(pedido.getIdPedido());

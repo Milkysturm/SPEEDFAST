@@ -11,7 +11,6 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -23,8 +22,8 @@ import java.awt.event.WindowEvent;
  * abren el resto de las ventanas y una barra inferior con el resumen de los
  * pedidos, que se actualiza sola cuando los datos cambian.
  *
- * Usa BorderLayout: el encabezado arriba, los botones al centro en un
- * GridLayout de una columna, y el resumen abajo.
+ * Usa BorderLayout: el titulo arriba, los botones al centro en un GridLayout
+ * de una columna, y el resumen abajo.
  *
  * @author Olga Rivas
  * @version 6.0
@@ -57,12 +56,11 @@ public final class VentanaPrincipal extends JFrame {
 
         setTitle("SpeedFast - Sistema de gestion de entregas");
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        setSize(560, 420);
+        setSize(500, 270);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        add(Estilos.encabezado("SpeedFast",
-                "Gestion de pedidos y entregas a domicilio"), BorderLayout.NORTH);
+        add(crearTitulo(), BorderLayout.NORTH);
         add(crearPanelBotones(), BorderLayout.CENTER);
         add(crearBarraResumen(), BorderLayout.SOUTH);
 
@@ -76,22 +74,32 @@ public final class VentanaPrincipal extends JFrame {
     }
 
     /**
+     * Crea el titulo que encabeza la ventana.
+     *
+     * @return etiqueta del titulo
+     */
+    private JLabel crearTitulo() {
+        JLabel titulo = new JLabel("SpeedFast - Gestion de pedidos y entregas");
+        titulo.setBorder(BorderFactory.createEmptyBorder(12, 14, 6, 14));
+        return titulo;
+    }
+
+    /**
      * Crea el panel central con los tres botones de la aplicacion.
      *
      * @return panel con los botones
      */
     private JPanel crearPanelBotones() {
-        JPanel panel = new JPanel(new GridLayout(3, 1, 0, 14));
-        panel.setBackground(Estilos.FONDO);
-        panel.setBorder(BorderFactory.createEmptyBorder(28, 60, 28, 60));
+        JPanel panel = new JPanel(new GridLayout(3, 1, 0, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 30, 16, 30));
 
-        JButton botonRegistrar = Estilos.boton("Registrar pedido", true);
+        JButton botonRegistrar = new JButton("Registrar pedido");
         botonRegistrar.addActionListener(e -> abrirRegistro());
 
-        JButton botonListar = Estilos.boton("Listar pedidos", false);
+        JButton botonListar = new JButton("Listar pedidos");
         botonListar.addActionListener(e -> abrirLista());
 
-        JButton botonEntregas = Estilos.boton("Asignar repartidor / Iniciar entrega", false);
+        JButton botonEntregas = new JButton("Asignar repartidor / Iniciar entrega");
         botonEntregas.addActionListener(e -> abrirEntregas());
 
         panel.add(botonRegistrar);
@@ -107,13 +115,7 @@ public final class VentanaPrincipal extends JFrame {
      */
     private JPanel crearBarraResumen() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(0xD8DDE4)),
-                Estilos.margen(10)));
-
-        resumen.setFont(Estilos.NORMAL);
-        resumen.setForeground(Estilos.GRIS);
+        panel.setBorder(BorderFactory.createEmptyBorder(8, 14, 10, 14));
         panel.add(resumen, BorderLayout.CENTER);
         return panel;
     }
@@ -122,10 +124,10 @@ public final class VentanaPrincipal extends JFrame {
      * Actualiza el texto del resumen con los totales actuales.
      */
     private void actualizarResumen() {
-        resumen.setText("Pedidos registrados: " + controlador.getTotalPedidos()
-                + "     Por asignar: " + controlador.contarPorEstado(EstadoPedido.RESERVADO)
-                + "     En ruta: " + controlador.contarPorEstado(EstadoPedido.DESPACHADO)
-                + "     Entregados: " + controlador.contarPorEstado(EstadoPedido.ENTREGADO));
+        resumen.setText("Registrados: " + controlador.getTotalPedidos()
+                + "   |   Por asignar: " + controlador.contarPorEstado(EstadoPedido.RESERVADO)
+                + "   |   En ruta: " + controlador.contarPorEstado(EstadoPedido.DESPACHADO)
+                + "   |   Entregados: " + controlador.contarPorEstado(EstadoPedido.ENTREGADO));
     }
 
     // ------------------------------------------------------------------

@@ -4,7 +4,7 @@ package com.speedfast.contrato;
  * Contrato de todo elemento que lleva registro de lo que le fue ocurriendo
  * y puede mostrarlo.
  *
- * Cada Pedido rastrea su propia bitacora; el ControladorDeEnvios rastrea el
+ * Cada Pedido rastrea su propia bitacora; el controlador de pedidos rastrea el
  * historial global de la operacion. Misma capacidad, dos alcances distintos.
  *
  * @author Olga Rivas

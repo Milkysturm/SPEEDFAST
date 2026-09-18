@@ -13,17 +13,15 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import java.awt.GridLayout;
 
 /**
  * Formulario de registro de pedidos.
@@ -88,12 +86,10 @@ public final class VentanaRegistroPedido extends JFrame {
 
         setTitle("SpeedFast - Registrar pedido");
         setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
-        setSize(540, 520);
+        setSize(470, 350);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        add(Estilos.encabezado("Registrar pedido",
-                "Completa los datos y presiona Guardar"), BorderLayout.NORTH);
         add(crearFormulario(), BorderLayout.CENTER);
         add(crearPanelBotones(), BorderLayout.SOUTH);
 
@@ -139,61 +135,33 @@ public final class VentanaRegistroPedido extends JFrame {
      * @return panel del formulario
      */
     private JPanel crearFormulario() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Estilos.FONDO);
-        panel.setBorder(BorderFactory.createEmptyBorder(18, 24, 8, 24));
+        JPanel campos = new JPanel(new GridLayout(5, 2, 8, 8));
+        campos.setBorder(BorderFactory.createEmptyBorder(14, 14, 8, 14));
 
-        GridBagConstraints reglas = new GridBagConstraints();
-        reglas.insets = new Insets(6, 6, 6, 6);
-        reglas.anchor = GridBagConstraints.WEST;
-        reglas.fill = GridBagConstraints.HORIZONTAL;
-
-        agregarFila(panel, reglas, 0, "ID del pedido:", campoId);
-        agregarFila(panel, reglas, 1, "Calle y numero:", campoCalle);
-        agregarFila(panel, reglas, 2, "Comuna:", comboComuna);
-        agregarFila(panel, reglas, 3, "Tipo de pedido:", comboTipo);
-        agregarFila(panel, reglas, 4, "Distancia (km):", campoDistancia);
+        campos.add(new JLabel("ID del pedido:"));
+        campos.add(campoId);
+        campos.add(new JLabel("Calle y numero:"));
+        campos.add(campoCalle);
+        campos.add(new JLabel("Comuna:"));
+        campos.add(comboComuna);
+        campos.add(new JLabel("Tipo de pedido:"));
+        campos.add(comboTipo);
+        campos.add(new JLabel("Distancia (km):"));
+        campos.add(campoDistancia);
 
         armarPanelEspecifico();
-        reglas.gridx = 0;
-        reglas.gridy = 5;
-        reglas.gridwidth = 2;
-        panel.add(panelEspecifico, reglas);
 
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(campos, BorderLayout.NORTH);
+        panel.add(panelEspecifico, BorderLayout.CENTER);
         return panel;
-    }
-
-    /**
-     * Agrega al formulario una fila con su etiqueta y su campo.
-     *
-     * @param panel  panel del formulario
-     * @param reglas reglas de posicionamiento
-     * @param fila   numero de fila
-     * @param texto  texto de la etiqueta
-     * @param campo  componente de entrada
-     */
-    private void agregarFila(JPanel panel, GridBagConstraints reglas, int fila,
-                             String texto, JComponent campo) {
-        reglas.gridx = 0;
-        reglas.gridy = fila;
-        reglas.gridwidth = 1;
-        reglas.weightx = 0;
-        panel.add(Estilos.etiqueta(texto), reglas);
-
-        reglas.gridx = 1;
-        reglas.weightx = 1;
-        campo.setFont(Estilos.NORMAL);
-        panel.add(campo, reglas);
     }
 
     /**
      * Prepara las tres tarjetas del CardLayout, una por tipo de pedido.
      */
     private void armarPanelEspecifico() {
-        panelEspecifico.setBackground(Estilos.FONDO);
-        panelEspecifico.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(new Color(0xC9D1DA)), "Datos del tipo de pedido"));
-
+        panelEspecifico.setBorder(BorderFactory.createTitledBorder("Datos del tipo de pedido"));
         panelEspecifico.add(tarjeta("Restaurante:", campoRestaurante, checkMochila), COMIDA);
         panelEspecifico.add(tarjeta("Peso (kg):", campoPeso, "Tipo de embalaje:", campoEmbalaje), ENCOMIENDA);
         panelEspecifico.add(tarjeta("Local:", campoLocal, checkDisponibilidad), EXPRESS);
@@ -208,21 +176,14 @@ public final class VentanaRegistroPedido extends JFrame {
      * @return panel de la tarjeta
      */
     private JPanel tarjeta(String texto, JTextField campo, JCheckBox casilla) {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Estilos.FONDO);
-        GridBagConstraints reglas = new GridBagConstraints();
-        reglas.insets = new Insets(6, 6, 6, 6);
-        reglas.anchor = GridBagConstraints.WEST;
-        reglas.fill = GridBagConstraints.HORIZONTAL;
+        JPanel filaCasilla = new JPanel(new GridLayout(1, 2, 8, 0));
+        filaCasilla.add(new JLabel(""));
+        filaCasilla.add(casilla);
 
-        agregarFila(panel, reglas, 0, texto, campo);
-
-        reglas.gridx = 1;
-        reglas.gridy = 1;
-        casilla.setBackground(Estilos.FONDO);
-        casilla.setFont(Estilos.NORMAL);
-        panel.add(casilla, reglas);
-        return panel;
+        JPanel contenido = new JPanel(new GridLayout(2, 1, 0, 6));
+        contenido.add(fila(texto, campo));
+        contenido.add(filaCasilla);
+        return enCaja(contenido);
     }
 
     /**
@@ -235,15 +196,37 @@ public final class VentanaRegistroPedido extends JFrame {
      * @return panel de la tarjeta
      */
     private JPanel tarjeta(String texto1, JTextField campo1, String texto2, JTextField campo2) {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Estilos.FONDO);
-        GridBagConstraints reglas = new GridBagConstraints();
-        reglas.insets = new Insets(6, 6, 6, 6);
-        reglas.anchor = GridBagConstraints.WEST;
-        reglas.fill = GridBagConstraints.HORIZONTAL;
+        JPanel contenido = new JPanel(new GridLayout(2, 1, 0, 6));
+        contenido.add(fila(texto1, campo1));
+        contenido.add(fila(texto2, campo2));
+        return enCaja(contenido);
+    }
 
-        agregarFila(panel, reglas, 0, texto1, campo1);
-        agregarFila(panel, reglas, 1, texto2, campo2);
+    /**
+     * Crea una fila con su etiqueta a la izquierda y su campo a la derecha.
+     *
+     * @param texto etiqueta de la fila
+     * @param campo campo de texto
+     * @return panel de la fila
+     */
+    private JPanel fila(String texto, JTextField campo) {
+        JPanel panel = new JPanel(new GridLayout(1, 2, 8, 0));
+        panel.add(new JLabel(texto));
+        panel.add(campo);
+        return panel;
+    }
+
+    /**
+     * Deja el contenido de una tarjeta pegado arriba, para que los campos
+     * conserven su alto natural en vez de estirarse.
+     *
+     * @param contenido campos de la tarjeta
+     * @return panel de la tarjeta
+     */
+    private JPanel enCaja(JPanel contenido) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        panel.add(contenido, BorderLayout.NORTH);
         return panel;
     }
 
@@ -261,16 +244,12 @@ public final class VentanaRegistroPedido extends JFrame {
      * @return panel con los botones
      */
     private JPanel crearPanelBotones() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 12));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(0xD8DDE4)));
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 10));
 
-        JButton botonLimpiar = Estilos.boton("Limpiar", false);
-        botonLimpiar.setPreferredSize(null);
+        JButton botonLimpiar = new JButton("Limpiar");
         botonLimpiar.addActionListener(e -> limpiarFormulario());
 
-        JButton botonGuardar = Estilos.boton("Guardar pedido", true);
-        botonGuardar.setPreferredSize(null);
+        JButton botonGuardar = new JButton("Guardar pedido");
         botonGuardar.addActionListener(e -> guardar());
 
         panel.add(botonLimpiar);
@@ -412,8 +391,9 @@ public final class VentanaRegistroPedido extends JFrame {
         }
         try {
             double valor = Double.parseDouble(texto);
-            // parseDouble tambien acepta "Infinity", "NaN" y notaciones como
-            // "0x1p3", que no son valores validos para este formulario.
+            // parseDouble tambien acepta "Infinity" y "NaN", que no son
+            // valores validos para este formulario y dejarian la tabla con
+            // tiempos absurdos. isFinite los descarta.
             if (!Double.isFinite(valor)) {
                 avisar("El valor de " + queCampo + " no es un numero valido.", campo);
                 return Double.NaN;

@@ -7,7 +7,7 @@ package com.speedfast.modelo;
  * mas 1.5 minutos por kilometro. El resultado se ajusta a un numero entero
  * de minutos.
  *
- * @author Olga
+ * @author Olga Rivas
  * @version 2.0
  */
 public class PedidoEncomienda extends Pedido {

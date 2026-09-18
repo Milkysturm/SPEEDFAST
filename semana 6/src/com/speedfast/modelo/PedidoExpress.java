@@ -10,7 +10,7 @@ package com.speedfast.modelo;
  * continua con la distancia sino por tramos, asi que no usa la formula
  * lineal de la clase base.
  *
- * @author Olga
+ * @author Olga Rivas
  * @version 2.0
  */
 public class PedidoExpress extends Pedido {

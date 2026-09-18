@@ -17,7 +17,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
 
 /**
@@ -65,13 +64,12 @@ public final class VentanaListaPedidos extends JFrame {
 
         setTitle("SpeedFast - Listado de pedidos");
         setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
-        setSize(1000, 460);
+        setSize(900, 400);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        add(Estilos.encabezado("Pedidos registrados",
-                "Estado actual de todos los pedidos del sistema"), BorderLayout.NORTH);
-        add(crearCentro(), BorderLayout.CENTER);
+        add(crearBarraFiltro(), BorderLayout.NORTH);
+        add(crearTabla(), BorderLayout.CENTER);
         add(crearBarraInferior(), BorderLayout.SOUTH);
 
         // La tabla se refresca sola ante cualquier cambio en los datos.
@@ -80,23 +78,38 @@ public final class VentanaListaPedidos extends JFrame {
     }
 
     /**
-     * Crea la zona central: el filtro arriba y la tabla debajo.
+     * Crea la tabla dentro de su barra de desplazamiento.
      *
-     * @return panel central
+     * @return contenedor de la tabla
      */
-    private JPanel crearCentro() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Estilos.FONDO);
-        panel.add(crearBarraFiltro(), BorderLayout.NORTH);
-
-        Estilos.configurarTabla(tabla);
+    private JScrollPane crearTabla() {
         tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tabla.getTableHeader().setReorderingAllowed(false);
+
+        // Deja el fondo de la tabla debajo de la ultima fila.
+        tabla.setFillsViewportHeight(true);
+
+        // Permite ordenar haciendo clic en el encabezado.
+        tabla.setAutoCreateRowSorter(true);
+
+        // Pinta cada fila segun el estado del pedido. Hay que registrarlo
+        // para Double e Integer ademas de Object, porque Swing trae su propio
+        // render para los numeros y, si no, esas dos columnas no se colorean.
+        RenderEstadoPedido render = new RenderEstadoPedido();
+        tabla.setDefaultRenderer(Object.class, render);
+        tabla.setDefaultRenderer(Double.class, render);
+        tabla.setDefaultRenderer(Integer.class, render);
+
+        // Reparte el ancho segun lo que muestra cada columna, para que la
+        // direccion y el repartidor no queden cortados.
+        int[] anchos = {60, 105, 215, 105, 160, 175, 95};
+        for (int i = 0; i < anchos.length && i < tabla.getColumnCount(); i++) {
+            tabla.getColumnModel().getColumn(i).setPreferredWidth(anchos[i]);
+        }
 
         JScrollPane contenedor = new JScrollPane(tabla);
-        contenedor.setBorder(BorderFactory.createEmptyBorder(0, 12, 12, 12));
-        contenedor.getViewport().setBackground(Color.WHITE);
-        panel.add(contenedor, BorderLayout.CENTER);
-        return panel;
+        contenedor.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+        return contenedor;
     }
 
     /**
@@ -105,45 +118,35 @@ public final class VentanaListaPedidos extends JFrame {
      * @return panel del filtro
      */
     private JPanel crearBarraFiltro() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 12));
-        panel.setBackground(Estilos.FONDO);
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 10));
 
         comboFiltro.addItem(TODOS);
         for (EstadoPedido estado : EstadoPedido.values()) {
             comboFiltro.addItem(estado.getDescripcion());
         }
-        comboFiltro.setFont(Estilos.NORMAL);
         comboFiltro.addActionListener(e -> refrescar());
 
-        panel.add(Estilos.etiqueta("Mostrar:"));
+        panel.add(new JLabel("Mostrar:"));
         panel.add(comboFiltro);
         return panel;
     }
 
     /**
-     * Crea la barra inferior con el contador y el boton de refrescar.
+     * Crea la barra inferior con el contador y los botones.
      *
      * @return panel inferior
      */
     private JPanel crearBarraInferior() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(0xD8DDE4)));
+        panel.setBorder(BorderFactory.createEmptyBorder(6, 12, 8, 12));
 
-        contador.setFont(Estilos.NORMAL);
-        contador.setForeground(Estilos.GRIS);
-        contador.setBorder(Estilos.margen(12));
-
-        JButton botonCancelar = Estilos.boton("Cancelar pedido", false);
-        botonCancelar.setPreferredSize(null);
+        JButton botonCancelar = new JButton("Cancelar pedido");
         botonCancelar.addActionListener(e -> cancelarSeleccionado());
 
-        JButton botonRefrescar = Estilos.boton("Refrescar", false);
-        botonRefrescar.setPreferredSize(null);
+        JButton botonRefrescar = new JButton("Refrescar");
         botonRefrescar.addActionListener(e -> refrescar());
 
-        JPanel derecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 8));
-        derecha.setBackground(Color.WHITE);
+        JPanel derecha = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         derecha.add(botonCancelar);
         derecha.add(botonRefrescar);
 
