@@ -1,0 +1,4 @@
+# La contrasena de la base de datos no se sube al repositorio.
+db.properties
+out/
+*.class
