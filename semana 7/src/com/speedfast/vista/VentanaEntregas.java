@@ -26,6 +26,7 @@ import java.awt.Font;
 import java.sql.SQLException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 /**
  * Ventana de asignacion de repartidores y simulacion de entregas.
@@ -319,6 +320,8 @@ public final class VentanaEntregas extends JFrame implements EscuchaDeEntregas {
      * porque con la tabla ordenada la fila puede cambiar de lugar.
      */
     private void refrescar() {
+        recargarRepartidores();
+
         int filaVista = tabla.getSelectedRow();
         String seleccionado = (filaVista < 0)
                 ? null : modelo.getIdEn(tabla.convertRowIndexToModel(filaVista));
@@ -332,6 +335,27 @@ public final class VentanaEntregas extends JFrame implements EscuchaDeEntregas {
                 if (nuevaFila >= 0) {
                     tabla.setRowSelectionInterval(nuevaFila, nuevaFila);
                 }
+            }
+        }
+    }
+
+    /**
+     * Vuelve a llenar el combo con los repartidores que hay ahora, conservando
+     * el que estuviera elegido. Hace falta porque se pueden registrar
+     * repartidores nuevos con esta ventana ya abierta.
+     */
+    private void recargarRepartidores() {
+        Repartidor elegido = (Repartidor) comboRepartidores.getSelectedItem();
+        List<Repartidor> actuales = controlador.getRepartidores();
+        if (actuales.size() == comboRepartidores.getItemCount()) {
+            return;
+        }
+
+        comboRepartidores.removeAllItems();
+        for (Repartidor repartidor : actuales) {
+            comboRepartidores.addItem(repartidor);
+            if (elegido != null && elegido.getId() == repartidor.getId()) {
+                comboRepartidores.setSelectedItem(repartidor);
             }
         }
     }

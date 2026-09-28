@@ -16,6 +16,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -143,21 +144,62 @@ class PedidoDAOTest {
     }
 
     @Test
-    @DisplayName("El cambio de estado se guarda y se vuelve a leer igual")
-    void guardaElCambioDeEstado() throws SQLException {
+    @DisplayName("Un pedido entregado se guarda y se vuelve a leer entregado")
+    void guardaLaEntrega() throws SQLException {
         Pedido pedido = new PedidoComida("P-001", "Uno", 1.0, "Local", false);
         dao.guardar(pedido);
 
         pedido.asignarRepartidor(new Repartidor("Camila Soto"));
-        dao.actualizarEstado(pedido);
-        assertEquals(EstadoPedido.ASIGNADO, buscar(dao.listarTodos(), "P-001").getEstado());
-
         pedido.despachar();
-        dao.actualizarEstado(pedido);
-        assertEquals(EstadoPedido.DESPACHADO, buscar(dao.listarTodos(), "P-001").getEstado());
-
         pedido.registrarEntrega(900);
         dao.actualizarEstado(pedido);
+
+        assertEquals(EstadoPedido.ENTREGADO, buscar(dao.listarTodos(), "P-001").getEstado());
+    }
+
+    @Test
+    @DisplayName("Un pedido asignado vuelve como pendiente, porque la asignacion no esta guardada")
+    void elPedidoAsignadoVuelveComoPendiente() throws SQLException {
+        Pedido pedido = new PedidoComida("P-001", "Uno", 1.0, "Local", false);
+        dao.guardar(pedido);
+        pedido.asignarRepartidor(new Repartidor("Camila Soto"));
+        dao.actualizarEstado(pedido);
+
+        // El modelo solo relaciona pedido y repartidor a traves de la tabla
+        // entrega: una asignacion sin entrega no queda guardada, asi que el
+        // pedido tiene que volver reasignable y no bloqueado.
+        Pedido leido = buscar(dao.listarTodos(), "P-001");
+        assertEquals(EstadoPedido.RESERVADO, leido.getEstado());
+        assertTrue(leido.asignarRepartidor(new Repartidor("Diego Fuentes")) != null
+                && leido.getEstado() == EstadoPedido.ASIGNADO,
+                "un pedido recuperado deberia poder asignarse de nuevo");
+    }
+
+    @Test
+    @DisplayName("Un pedido en ruta al cerrar tambien vuelve como pendiente")
+    void elPedidoEnRutaVuelveComoPendiente() throws SQLException {
+        Pedido pedido = new PedidoComida("P-001", "Uno", 1.0, "Local", false);
+        dao.guardar(pedido);
+        pedido.asignarRepartidor(new Repartidor("Camila Soto"));
+        pedido.despachar();
+        dao.actualizarEstado(pedido);
+
+        assertEquals(EstadoPedido.RESERVADO, buscar(dao.listarTodos(), "P-001").getEstado());
+    }
+
+    @Test
+    @DisplayName("Un pedido ya entregado no se puede cancelar")
+    void noSeCancelaUnPedidoEntregado() throws SQLException {
+        Pedido pedido = new PedidoComida("P-001", "Uno", 1.0, "Local", false);
+        dao.guardar(pedido);
+        pedido.asignarRepartidor(new Repartidor("Camila Soto"));
+        pedido.despachar();
+        pedido.registrarEntrega(900);
+        dao.actualizarEstado(pedido);
+
+        // Si se dejara cancelar, la base quedaria diciendo dos cosas a la vez:
+        // una fila en entrega y el pedido marcado como cancelado.
+        assertFalse(pedido.cancelar("me arrepenti"));
         assertEquals(EstadoPedido.ENTREGADO, buscar(dao.listarTodos(), "P-001").getEstado());
     }
 

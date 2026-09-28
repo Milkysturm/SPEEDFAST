@@ -290,7 +290,8 @@ public abstract class Pedido implements Despachable, Cancelable, Rastreable {
     // ------------------------------------------------------------------
 
     /**
-     * Cancela el pedido. No se permite cancelar algo que ya va en ruta.
+     * Cancela el pedido. No se permite cancelar algo que ya va en ruta ni
+     * algo que ya fue entregado.
      *
      * @return true si el pedido quedo cancelado
      */
@@ -298,6 +299,10 @@ public abstract class Pedido implements Despachable, Cancelable, Rastreable {
     public synchronized boolean cancelar() {
         if (estado == EstadoPedido.DESPACHADO) {
             registrarEvento("Cancelacion rechazada: el pedido ya va en ruta.");
+            return false;
+        }
+        if (estado == EstadoPedido.ENTREGADO) {
+            registrarEvento("Cancelacion rechazada: el pedido ya fue entregado.");
             return false;
         }
         if (estado == EstadoPedido.CANCELADO) {

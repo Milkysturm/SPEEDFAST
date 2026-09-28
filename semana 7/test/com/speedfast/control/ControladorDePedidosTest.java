@@ -186,17 +186,32 @@ class ControladorDePedidosTest {
     // ------------------------------------------------------------------
 
     @Test
-    @DisplayName("Asignar deja el pedido ASIGNADO y lo guarda asi en la base")
-    void asignarQuedaGuardado() throws SQLException {
+    @DisplayName("Asignar deja el pedido ASIGNADO en la sesion de trabajo")
+    void asignarDejaElPedidoAsignado() throws SQLException {
         controlador.agregarPedido(pedidoDePrueba("P-001"));
         Pedido pedido = controlador.buscarPorId("P-001");
         Repartidor repartidor = controlador.getRepartidores().get(0);
 
         assertTrue(controlador.asignarRepartidor(pedido, repartidor));
         assertEquals(EstadoPedido.ASIGNADO, pedido.getEstado());
+        assertEquals(1, repartidor.getTotalPedidos());
+    }
 
+    @Test
+    @DisplayName("Tras recargar, un pedido asignado vuelve pendiente y se puede reasignar")
+    void trasRecargarElPedidoAsignadoSePuedeReasignar() throws SQLException {
+        controlador.agregarPedido(pedidoDePrueba("P-001"));
+        controlador.asignarRepartidor(controlador.buscarPorId("P-001"),
+                controlador.getRepartidores().get(0));
+
+        // La asignacion no se guarda: el modelo relaciona pedido y repartidor
+        // solo a traves de la tabla entrega. Lo importante es que el pedido no
+        // quede bloqueado, sino disponible para asignarlo de nuevo.
         controlador.cargarDesdeBaseDatos();
-        assertEquals(EstadoPedido.ASIGNADO, controlador.buscarPorId("P-001").getEstado());
+
+        Pedido recuperado = controlador.buscarPorId("P-001");
+        assertEquals(EstadoPedido.RESERVADO, recuperado.getEstado());
+        assertTrue(controlador.asignarRepartidor(recuperado, controlador.getRepartidores().get(1)));
     }
 
     @Test

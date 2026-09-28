@@ -26,11 +26,17 @@ mysql -u root -p < sql/speedfast_db.sql
 Crea la base `speedfast_db`, las tres tablas con sus llaves foráneas y deja cargados los tres
 repartidores de la empresa.
 
+Una nota sobre el nombre: el script del enunciado hace `CREATE DATABASE speedfast` y a continuación
+`USE speedfast_db`, dos nombres distintos, así que falla en la segunda línea. El Paso 1 pide
+`speedfast_db`, y ese es el nombre que usa este script.
+
 ### 2. Agregar el conector JDBC al proyecto
 
-En IntelliJ IDEA: `File → Project Structure → Libraries → + → From Maven…`, buscar
-`com.mysql:mysql-connector-j` y elegir la versión más reciente. También sirve descargar el `.jar`
-desde la página de MySQL y agregarlo con `+ → Java…`.
+El conector ya viene en `lib/mysql-connector-j-26.7.0.jar` y el módulo lo declara en su `.iml`,
+así que al abrir la carpeta en IntelliJ queda listo sin configurar nada.
+
+Si hiciera falta agregarlo a mano: `File → Project Structure → Libraries → + → Java…` y elegir ese
+archivo, o `+ → From Maven…` buscando `com.mysql:mysql-connector-j`.
 
 El conector solo hace falta **al ejecutar**: el código no importa ninguna clase de MySQL, solo las
 interfaces de `java.sql`, así que compila sin él.
@@ -118,10 +124,12 @@ Además de las llaves primarias, las foráneas y los `NOT NULL` del modelo, el s
 ```
 semana 7/
 ├── sql/speedfast_db.sql             Script de la base de datos
+├── lib/mysql-connector-j-*.jar      Conector JDBC de MySQL
 ├── docs/capturas/                   Capturas de las ventanas
-├── src/com/speedfast/
+├── src/
 │   ├── db.properties.ejemplo        Plantilla de los datos de conexión
-│   ├── main/Main.java               Punto de entrada; comprueba la conexión
+│   └── com/speedfast/
+│       ├── main/Main.java               Punto de entrada; comprueba la conexión
 │   ├── dao/                         Acceso a la base de datos
 │   │   ├── ConexionBD.java          Entrega las conexiones con DriverManager
 │   │   ├── PedidoDAO.java           guardar, listarTodos, actualizarEstado
@@ -193,6 +201,20 @@ try (Connection conexion = ConexionBD.conectar();
 }   // aqui se cierran los tres, aunque se haya lanzado una excepcion
 ```
 
+### Dónde se atrapan las excepciones
+
+Los DAO **no** atrapan `SQLException`: la declaran y la dejan subir. El `catch` está en las
+ventanas, que es donde hay algo que hacer con el error — mostrarle a la usuaria qué falló, con un
+`JOptionPane` que dice qué se intentaba y qué respondió MySQL.
+
+Atraparla dentro del DAO obligaría a devolver algo falso: una lista vacía como si no hubiera
+pedidos, o un `false` que no distingue "no se pudo guardar" de "se guardó". La interfaz mostraría
+una tabla vacía sin que nadie se entere de que la base está caída. Por eso el error viaja hasta
+quien puede reaccionar.
+
+`Main` es la excepción: ahí el `catch` está al inicio, para avisar de que no hay base de datos
+antes de abrir ninguna ventana.
+
 ### Cómo se traducen los objetos a filas
 
 `PedidoDAO` es el que sabe traducir en los dos sentidos:
@@ -229,11 +251,11 @@ se congelaría mientras dura.
 
 ## Pruebas unitarias
 
-**49 pruebas** en cinco archivos, con JUnit 5:
+**53 pruebas** en cinco archivos, con JUnit 5:
 
 | Archivo | Qué comprueba |
 |---------|---------------|
-| `PedidoDAOTest` | Que guardar asigne el id generado; que un pedido vuelva de la base con su subclase y sus datos; que la base rechace un código repetido; que los cambios de estado se guarden y se lean igual |
+| `PedidoDAOTest` | Que guardar asigne el id generado; que un pedido vuelva de la base con su subclase y sus datos; que la base rechace un código repetido; que un pedido asignado o en ruta vuelva **reasignable** y no bloqueado; que un pedido entregado no se pueda cancelar |
 | `RepartidorDAOTest` | Que `listarTodos()` traiga los repartidores con su id y vehículo, ordenados; que guardar asigne el id; que se rechace un nombre vacío |
 | `EntregaDAOTest` | Que la entrega se guarde y se lea con su fecha y hora; que un pedido pueda tener varias; que **las llaves foráneas rechacen** una entrega de un pedido o un repartidor que no existen |
 | `ControladorDePedidosTest` | Que lo registrado quede guardado de verdad: varias pruebas vuelven a leer desde la base con un controlador nuevo antes de revisar el resultado |
@@ -243,7 +265,9 @@ Las pruebas que necesitan MySQL usan `Assumptions.assumeTrue(...)`: si el servid
 encendido **se omiten en vez de fallar**, porque un servidor apagado no es un error del código. Las
 de `ModeloTablaPedidos` corren siempre.
 
-Para ejecutarlas desde IntelliJ: clic derecho sobre la carpeta `test` → *Run All Tests*.
+Para ejecutarlas desde IntelliJ: clic derecho sobre la carpeta `test` → *Run All Tests*. La
+primera vez IntelliJ ofrece descargar JUnit 5; hay que aceptarlo, porque a diferencia del conector
+de MySQL la librería de pruebas no viaja en `lib/`.
 
 ## Capturas
 
@@ -275,6 +299,15 @@ Para ejecutarlas desde IntelliJ: clic derecho sobre la carpeta `test` → *Run A
 - **Las listas en memoria siguen existiendo, pero como copia.** La interfaz no consulta la base cada
   vez que dibuja una fila; consulta al cargar y cuando algo cambia. Es lo que mantiene la tabla
   rápida sin dejar de reflejar lo guardado.
+- **La asignación de repartidor no se guarda, y es a propósito.** En el modelo, pedido y repartidor
+  se relacionan **solo** a través de `entrega`. Mientras no haya entrega no hay nada que guardar, así
+  que un pedido que quedó asignado al cerrar la aplicación vuelve como pendiente y se puede asignar
+  de nuevo. La alternativa —recordar el estado `ASIGNADO` sin recordar a quién— dejaba el pedido
+  bloqueado: no se podía reasignar, porque ya no estaba pendiente, ni despachar, porque no tenía
+  repartidor.
+- **Un pedido entregado no se puede cancelar.** Antes de esta semana esa regla faltaba y solo
+  producía una incoherencia en pantalla. Ahora dejaría la base diciendo dos cosas a la vez: una fila
+  en `entrega` que prueba que se entregó, y el pedido marcado como cancelado.
 - **Los errores de base de datos se muestran, no se esconden.** Cada `SQLException` termina en un
   `JOptionPane` que dice qué se intentaba hacer y qué respondió MySQL.
 

@@ -78,7 +78,7 @@ public class PedidoDAO {
                     ? ((PedidoEncomienda) pedido).getTipoEmbalaje() : null);
             sentencia.setString(9, (pedido instanceof PedidoExpress)
                     ? ((PedidoExpress) pedido).getLocal() : null);
-            sentencia.setBoolean(10, esPrioritario(pedido));
+            aplicarPrioritario(sentencia, pedido);
             sentencia.setString(11, pedido.getEstado().name());
 
             sentencia.executeUpdate();
@@ -237,8 +237,19 @@ public class PedidoDAO {
         }
 
         pedido.setId(filas.getInt("id"));
-        pedido.restaurarEstado(estadoDesde(
-                filas.getString("estado_detalle"), filas.getString("estado")));
+
+        // El modelo relaciona pedido y repartidor solo a traves de la tabla
+        // entrega, asi que una asignacion que todavia no produjo una entrega no
+        // queda guardada en ninguna parte. Al recuperar el pedido no se sabe
+        // quien lo tenia, y un pedido asignado sin repartidor no se podria ni
+        // reasignar ni despachar: por eso vuelve como pendiente, que es lo que
+        // de verdad representa la fila guardada.
+        EstadoPedido estado = estadoDesde(
+                filas.getString("estado_detalle"), filas.getString("estado"));
+        if (estado == EstadoPedido.ASIGNADO || estado == EstadoPedido.DESPACHADO) {
+            estado = EstadoPedido.RESERVADO;
+        }
+        pedido.restaurarEstado(estado);
         return pedido;
     }
 
@@ -269,20 +280,23 @@ public class PedidoDAO {
     }
 
     /**
-     * Indica si el pedido pidio atencion preferente: mochila termica en los de
-     * comida, repartidor disponible de inmediato en las compras express.
+     * Pone la marca de atencion preferente: mochila termica en los pedidos de
+     * comida, repartidor disponible de inmediato en las compras express. En
+     * una encomienda no aplica, asi que se guarda NULL y no false, que seria
+     * decir que se pregunto y la respuesta fue que no.
      *
-     * @param pedido pedido consultado
-     * @return true si corresponde
+     * @param sentencia sentencia que se esta preparando
+     * @param pedido    pedido que se esta guardando
+     * @throws SQLException si falla al asignar el parametro
      */
-    private boolean esPrioritario(Pedido pedido) {
+    private void aplicarPrioritario(PreparedStatement sentencia, Pedido pedido) throws SQLException {
         if (pedido instanceof PedidoComida) {
-            return ((PedidoComida) pedido).isRequiereMochilaTermica();
+            sentencia.setBoolean(10, ((PedidoComida) pedido).isRequiereMochilaTermica());
+        } else if (pedido instanceof PedidoExpress) {
+            sentencia.setBoolean(10, ((PedidoExpress) pedido).isDisponibilidadInmediata());
+        } else {
+            sentencia.setNull(10, java.sql.Types.BOOLEAN);
         }
-        if (pedido instanceof PedidoExpress) {
-            return ((PedidoExpress) pedido).isDisponibilidadInmediata();
-        }
-        return false;
     }
 
     /**
