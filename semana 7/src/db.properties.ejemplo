@@ -1,0 +1,12 @@
+# Datos de conexion a MySQL.
+#
+# Copia este archivo como db.properties (sin .ejemplo) y pon tu contrasena.
+# db.properties esta en el .gitignore a proposito: una contrasena no se sube
+# a un repositorio publico.
+#
+# Si no existe db.properties, ConexionBD usa estos mismos valores por defecto
+# con la contrasena vacia.
+
+url=jdbc:mysql://localhost:3306/speedfast_db
+usuario=root
+clave=
