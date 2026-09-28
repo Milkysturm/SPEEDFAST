@@ -3,8 +3,9 @@
 Proyecto transversal de la asignatura **Desarrollo Orientado a Objetos II (PRY2203)** —
 Analista Programador Computacional, Duoc UC.
 
-Sistema de consola en Java para una empresa de reparto a domicilio con tres tipos de servicio:
-comida, encomiendas y compras express.
+Sistema en Java para una empresa de reparto a domicilio con tres tipos de servicio: comida,
+encomiendas y compras express. Parte como una aplicación de consola, gana una interfaz gráfica de
+escritorio en la semana 6 y persistencia en MySQL en la semana 7.
 
 ## Contenido del repositorio
 
@@ -15,6 +16,7 @@ comida, encomiendas y compras express.
 | [`semana 4`](./semana%204) | Concurrencia: hilos con `Runnable` y `ExecutorService`, entrada y salida por archivo |
 | [`semana 5`](./semana%205) | Sincronización del acceso a un recurso compartido y pruebas unitarias con JUnit |
 | [`semana 6`](./semana%206) | Interfaz gráfica de escritorio con Java Swing sobre el modelo de las semanas anteriores |
+| [`semana 7`](./semana%207) | Persistencia con JDBC: conexión a MySQL, clases DAO y la interfaz guardando y consultando en la base |
 
 Cada carpeta es un proyecto de IntelliJ IDEA independiente y tiene su propio README con la
 explicación del diseño.
